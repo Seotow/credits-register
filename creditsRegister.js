@@ -55,16 +55,13 @@ async function removeClass(independentClassID) {
     }
 }
 
-// let loop;
-// let fid = 4794; // An toàn và bảo mật thông tin
-// let independentIdList = [214812];
+let autoRegisterInterval;
 async function autoRegistMultiClasses(fid, independentIdList) {
     const url = `https://sv.haui.edu.vn/ajax/register/action.htm?cmd=classbymodulesid&v=${kverify}`;
     const body = `fid=${fid}`;
-    
     try {
         const classesData = (await fetchData(url, "POST", body)).data;
-        for (let i = 0; i < classes.length; i++) {
+        for (let i = 0; i < classesData.length; i++) {
             let classData = classesData[i];
             let condition = independentIdList.includes(classData.IndependentClassID);
             if (condition) {
@@ -73,13 +70,13 @@ async function autoRegistMultiClasses(fid, independentIdList) {
                     console.log(classData.CountS);
                 } else {
                     try {
-                        regist(classData.IndependentClassID)
+                        regist(classData.IndependentClassID);
                     } catch (err) {
                         console.log(err);
                         throw err;
                     }
-    
-                    clearInterval(a);
+
+                    clearInterval(window.autoRegisterInterval); // Dừng auto register
                 }
             }
         }
@@ -87,11 +84,26 @@ async function autoRegistMultiClasses(fid, independentIdList) {
         console.log(err);
         return;
     }
-    
 }
 
-// loop = setInterval(() => autoRegistMultiClasses(fid, independentIdList), 100);
-// clearInterval(loop);
+function startAutoRegister(fid, independentIdList, interval = 100) {
+    window.autoRegisterInterval = setInterval(() => autoRegistMultiClasses(fid, independentIdList), interval);
+}
+
+function removeAuto() {
+    if (window.autoRegisterInterval) {
+        clearInterval(window.autoRegisterInterval);
+        console.log("Dừng đăng ký tự động");
+    } else {
+        console.log("Hiện không đăng ký tự động");
+    }
+}
+
+// Sample
+// startAutoRegister(4794, [214812], 100);
+
+// // Dừng auto register
+// removeAuto();
 
 // Hàm xử lý để trích xuất thông tin trong khung chương trình
 function extractModules(data) {
@@ -203,31 +215,23 @@ let fids = [
 async function getClasses() {
     let fids = await getFids()
     let sections = [];
-    for (let i of fids) {
+    for (let fid of fids) {
         const url = `https://sv.haui.edu.vn/ajax/register/action.htm?cmd=classbymodulesid&v=${kverify}`
-        const body = `fid=${i}`
+        const body = `fid=${fid}`
 
         try {
             const classesData = (await fetchData(url, "POST", body)).data;
-            sections.push(classesData);
+            sections.push({fid, classes: classesData});
         } catch (err) {
             console.log(err)
             throw err;
         }
     }
-
     //classs is class
     sections
-        .filter(
-            (classes) =>
-                classes[0].ModulesCode.includes("IT") || // Học phần có CNTT
-                classes[0].ModulesCode.includes("LP") || // Học phần có lý luận
-                classes[0].ModulesCode.includes("FL") || // Học phần có Tiếng anh
-                classes[0].ModulesCode.includes("PE")    // Học phần có thể
-        )
-        .forEach((classes) => {
+        .forEach(({fid, classes}) => {
             console.group(
-                `%c${classes[0].ModulesName} - ${classes[0].ModulesCode}`,
+                `%c${classes[0].ModulesName} - ${classes[0].ModulesCode} - fid: ${fid}`,
                 "color: yellow; font-weight: bold;"
             );
             classes.forEach((classs) => {
@@ -275,6 +279,8 @@ async function getClasses() {
 
     return sections;
 }
+
+getClasses()
 
 let sampleClass = {
     IndependentClassID: 216243,
