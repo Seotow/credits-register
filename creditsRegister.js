@@ -63,7 +63,7 @@ async function autoRegistMultiClasses(fid, independentIdList) {
         const classesData = (await fetchData(url, "POST", body)).data;
         for (let i = 0; i < classesData.length; i++) {
             let classData = classesData[i];
-            let condition = independentIdList.includes(classData.IndependentClassID);
+            let condition = independentIdList.length === 0 || independentIdList.includes(classData.IndependentClassID);
             if (condition) {
                 if (classData.CountS == classData.MaxStudent) {
                     console.log("Lớp đầy");
@@ -231,12 +231,12 @@ async function getClasses() {
     sections
         .forEach(({fid, classes}) => {
             console.group(
-                `%c${classes[0].ModulesName} - ${classes[0].ModulesCode} - fid: ${fid}`,
+                `%c${classes[0]?.ModulesName} - ${classes[0]?.ModulesCode} - fid: ${fid}`,
                 "color: yellow; font-weight: bold;"
             );
             classes.forEach((classs) => {
                 // Xử lý giờ học
-                const listDate = JSON.parse(classs.ListDate);
+                const listDate = classs?.ListDate ? JSON.parse(classs.ListDate) : "";
                 // Map các giá trị DayStudy sang thứ trong tuần
                 const dayMapping = {
                     2: "Thứ 2",
@@ -265,13 +265,13 @@ async function getClasses() {
                     .join(", ");
 
                 // Hiển thị
-                console.group(JSON.parse(classs.GiaoVien)[0].Fullname);
+                console.group(JSON.parse(classs.GiaoVien)[0]?.Fullname);
                 console.log(
                     `${classs.IndependentClassID} - ${classs.ClassName}`
                 );
                 console.log(date);
                 console.log(`${classs.CountS}/${classs.MaxStudent}`);
-                console.log(`${classs.BranchName}`);
+                console.log(`${classs?.BranchName}`);
                 console.groupEnd();
             });
             console.groupEnd();
